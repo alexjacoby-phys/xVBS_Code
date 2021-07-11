@@ -12,6 +12,8 @@ import Pkg
 Pkg.add("LinearAlgebra")
 Pkg.add("DelimitedFiles")
 
+using LinearAlgebra
+using DelimitedFiles
 
 path = "../"
 include(join([path,"DMRjulia.jl"]))
@@ -20,7 +22,7 @@ using .DMRjulia
 for i in 0:10
     θ = 0.25*π*i*0.1
     Ns = 15
-    MXM = 50 #6^Ns
+    MXM = 35 #6^Ns
     psi = makePsi0(Ns)
     H = XVBSmake(Int(Ns),cos(θ),0.25*sin(θ))
     #@time params = dmrg(psi,H,maxm=MXM,sweeps=250,cutoff=1E-9)
