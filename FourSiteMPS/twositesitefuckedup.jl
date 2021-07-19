@@ -2,7 +2,7 @@ using LinearAlgebra
 using Combinatorics
 using Plots
 using LaTeXStrings
-using DelimitedFiles
+
 
 
 function delta(a::Int64,b::Int64)
@@ -22,7 +22,7 @@ end
 
 Basis = Dict([1,2] => state(1), [2,1]=> -state(1), [1,3] => state(2), [3,1] => -state(2), [1,4]=> state(3), [4,1] => -state(3), [2,3]=> state(4), [3,2]=> -state(4), [2,4] => state(5), [4,2] => -state(5), [3,4] => state(6), [4,3] => -state(6))
 
-function MPS(θL::Vector{Float64},θR::Vector{Float64})#gives Λ; indexed as Λ^{n}_{m}
+function MPS(θ)#gives Λ; indexed as Λ^{n}_{m}
     MPS = zeros(Float64,4,4,4,4,4,36)
     for n in 1:4, m in 1:4, a in 1:4, b in 1:4, c in 1:4
         MPS[a,b,c,n,m,:] = levicivita([a,b,c,m])*kron(get(Basis,[n,a],zeros(Float64,6)),get(Basis,[b,c],zeros(Float64,6)))
@@ -34,18 +34,14 @@ function MPS(θL::Vector{Float64},θR::Vector{Float64})#gives Λ; indexed as Λ^
         MPSS[i,j,:] = MPS0[i,j,:]+MPS0[j,i,:]
         MPSA[i,j,:] = MPS0[i,j,:]-MPS0[j,i,:]
     end
-    MPSF = zeros(Float64,4,4,36)
-    for i in 1:4, j in 1:4
-        MPSF[i,j,:] = sin(θL[i]+0.25*π)*sin(θR[j]+0.25*π)*MPSA[i,j,:]+cos(θL[i]+0.25*π)*cos(θR[j]+0.25*π)*MPSS[i,j,:]
-    end
-    return MPSF
+    return sin(θ)*MPSA+cos(θ)*MPSS
 end
+MPS(Float64(π))[1,2,:]
 
-
-function foursite(θ1L::Vector{Float64},θ1R::Vector{Float64},θ2L::Vector{Float64},θ2R::Vector{Float64})
-    FS = zeros(Float64,4,4,36^2)
+function twosite(θ1::Float64)
+    FS = zeros(Float64,4,4,36)
     for i in 1:4, j in 1:4
-        FS[i,j,:] = kron(MPS(θ1L,θ1R)[i,j,:],MPS(θ2L,θ2R)[j,i,:])
+        FS[i,j,:] = MPS(θ1)[i,j,:]
     end
     return normalize(dropdims(sum(FS, dims = (1,2)),dims = (1,2)))
 end
@@ -255,41 +251,27 @@ end
 
 
 
-H = Hamiltonian(4)
+H = Hamiltonian(2)
 
-θ1L = [0.,0.,0.,0.]
-θ1R = [0.,0.,0.,0.]
-θ2L = [0.,0.,0.,0.]
-θ2R = [0.,0.,0.,0.]
-dot(normalize(foursite(θ1L,θ1R,θ2L,θ2R)),H*normalize(foursite(θ1L,θ1R,θ2L,θ2R)))
+θ1 = 0.25*π#0.78539
+dot(normalize(twosite(θ1)),H*normalize(twosite(θ1)))
 spec = real(eigvals(H))
 unique(trunc.(spec, digits = 4))
-XL = []
-XR = []
+X = (Float64(π))*(1/100)*Vector(-50:50)
+
 Y = []
 Yerr = []
-norm([1/sqrt(2),1/sqrt(2)])
-for i in 1:1000
-    θ1L = 0.5*(rand(4)-ones(Float64,4))
-    θ1R = 0.5*(rand(4)-ones(Float64,4))
-    θ2L = [0.,0.,0.,0.]
-    θ2R = [0.,0.,0.,0.]
-    append!(XL,norm(θ1L)^2)
-    append!(XR,norm(θ1R)^2)
-    tempval = dot(normalize(foursite(θ1L,θ1R,θ2L,θ2R)),H*normalize(foursite(θ1L,θ1R,θ2L,θ2R)))+1.66666666666
+
+for i in 1:length(X)
+    ang = X[i]
+    tempval = dot(normalize(twosite(X[i])),H*normalize(twosite(X[i])))
     E = real(tempval)
     err = imag(tempval)
     append!(Y,E)
     append!(Yerr,err)
 end
-
-plot(XL,Y,legend = false, seriestype = :scatter, xlabel = "ϕ_{2} in Radians", ylabel = "Energy")
+Y
+plot(X,Y,legend = false, xlabel = "ϕ in Radians", ylabel = "Energy")
 plot!(X,Yerr)
-savearray = [XL,XR,Y]
-filename = string("DispersionCurve.txt")
-touch(filename)
-open(filename,"w") do io
-    writedlm(filename, savearray)
-end
-
+unique(trunc.(Y, digits = 4))
 savefig("velocityfig.pdf")

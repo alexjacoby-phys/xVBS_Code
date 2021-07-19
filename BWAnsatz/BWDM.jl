@@ -1,59 +1,7 @@
 using LinearAlgebra
 using Combinatorics
 using Plots
-using LaTeXStrings
 using DelimitedFiles
-
-
-function delta(a::Int64,b::Int64)
-    if a == b
-        return 1
-    else
-        return 0
-    end
-end
-
-
-function state(k::Int64)
-    statevec = zeros(Float64,6)
-    statevec[k]= 1.
-    return statevec
-end
-
-Basis = Dict([1,2] => state(1), [2,1]=> -state(1), [1,3] => state(2), [3,1] => -state(2), [1,4]=> state(3), [4,1] => -state(3), [2,3]=> state(4), [3,2]=> -state(4), [2,4] => state(5), [4,2] => -state(5), [3,4] => state(6), [4,3] => -state(6))
-
-function MPS(θL::Vector{Float64},θR::Vector{Float64})#gives Λ; indexed as Λ^{n}_{m}
-    MPS = zeros(Float64,4,4,4,4,4,36)
-    for n in 1:4, m in 1:4, a in 1:4, b in 1:4, c in 1:4
-        MPS[a,b,c,n,m,:] = levicivita([a,b,c,m])*kron(get(Basis,[n,a],zeros(Float64,6)),get(Basis,[b,c],zeros(Float64,6)))
-    end
-    MPS0 =  dropdims(sum(MPS, dims = (1,2,3)),dims = (1,2,3))
-    MPSS = zeros(Float64,4,4,36)
-    MPSA = zeros(Float64,4,4,36)
-    for i in 1:4, j in 1:4
-        MPSS[i,j,:] = MPS0[i,j,:]+MPS0[j,i,:]
-        MPSA[i,j,:] = MPS0[i,j,:]-MPS0[j,i,:]
-    end
-    MPSF = zeros(Float64,4,4,36)
-    for i in 1:4, j in 1:4
-        MPSF[i,j,:] = sin(θL[i]+0.25*π)*sin(θR[j]+0.25*π)*MPSA[i,j,:]+cos(θL[i]+0.25*π)*cos(θR[j]+0.25*π)*MPSS[i,j,:]
-    end
-    return MPSF
-end
-
-
-function foursite(θ1L::Vector{Float64},θ1R::Vector{Float64},θ2L::Vector{Float64},θ2R::Vector{Float64})
-    FS = zeros(Float64,4,4,36^2)
-    for i in 1:4, j in 1:4
-        FS[i,j,:] = kron(MPS(θ1L,θ1R)[i,j,:],MPS(θ2L,θ2R)[j,i,:])
-    end
-    return normalize(dropdims(sum(FS, dims = (1,2)),dims = (1,2)))
-end
-
-
-
-
-
 
 function xVBSOps()
     #SU(4) generators + Relevant Operators for VBS
@@ -213,83 +161,46 @@ function partialtrace(rho::Array{Complex{Float64},2},n::Int64,L::Int64#= n = how
 end
 
 
-
-# function Hamiltonian(L::Int64,θ::Float64)
-#     H = zeros(6^L,6^L)
-#     for i in 1:L-1
-#         for j in 1:length(Generators)
-#             H = H + MakeOp(MakeOpList((cos(θ)+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),i,i+1,L))
-#         end
-#         for j in 1:length(BiQuadLeft)
-#             H = H + MakeOp(MakeOpList((0.25*sin(θ) +0*im)*BiQuadLeft[j],(1+0*im)*BiQuadRight[j],i,i+1,L))
-#         end
-#     end
-#     for j in 1:length(Generators)
-#         H = H + MakeOp(MakeOpList((cos(θ)+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),L,1,L))
-#     end
-#     for j in 1:length(BiQuadLeft)
-#         H = H + MakeOp(MakeOpList((0.25*sin(θ) +0*im)*BiQuadLeft[j],(1+0*im)*BiQuadRight[j],L,1,L))
-#     end
-#     return H
-# end
-
-function Hamiltonian(L::Int64)
+for i in 2:6
+    L=i
     H = zeros(6^L,6^L)
+    function bcop(i::Int64)
+        returnval = zeros(Complex{Float64},6,6)
+        returnval[i,i] = 1.
+        return returnval
+    end
+    projoplist = (1+0*im)*fill(Id,L)
+    projoplist[1] = -10*bcop(1)
+    projoplist[L]= -10*bcop(2)
     for i in 1:L-1
         for j in 1:length(Generators)
-            H = H + MakeOp(MakeOpList((0.5+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),i,i+1,L))
+            H = H + MakeOp(MakeOpList((1/2+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),i,i+1,L))
         end
         for j in 1:length(BiQuadLeft)
-            H = H + MakeOp(MakeOpList(((1/12) +0*im)*BiQuadLeft[j],(1+0*im)*BiQuadRight[j],i,i+1,L))
+            H = H + MakeOp(MakeOpList((1/12 +0*im)*BiQuadLeft[j],(1+0*im)*BiQuadRight[j],i,i+1,L))
         end
+        H = H  +100* MakeOp(MakeOpList(bcop(2),bcop(2),1,1,L))+100* MakeOp(MakeOpList(bcop(1),bcop(1),1,1,L))+100*MakeOp(MakeOpList(bcop(1),bcop(1),L,L,L))+100*MakeOp(MakeOpList(bcop(3),bcop(3),L,L,L))
     end
-    #This bit imposes periodicity// comment it out if not desired
-    for j in 1:length(Generators)
-        H = H + MakeOp(MakeOpList((0.5+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),L,1,L))
+    states = eigvecs(H)
+    #which excited state-- 1-3^L are permitted
+    n=1
+    dot(states[:,n],H*states[:,n])
+    dmat = makerho(states,n)
+    rho = partialtrace(dmat,1,L)
+    YAX = zeros(L-1)
+
+    for i in 1:L-1
+        YAX[i] = SvN(partialtrace(dmat,i,L),0.01)
     end
-    for j in 1:length(BiQuadLeft)
-        H = H + MakeOp(MakeOpList(((1/12) +0*im)*BiQuadLeft[j],(1+0*im)*BiQuadRight[j],L,1,L))
+    XAX = 2:L
+    savearray = [XAX,YAX]
+    filename  = string("ED_EE_",L,"Site")
+    touch(filename)
+    open(filename,"w") do io
+        writedlm(filename, savearray)
     end
-    return H
 end
 
 
-
-H = Hamiltonian(4)
-
-θ1L = [0.,0.,0.,0.]
-θ1R = [0.,0.,0.,0.]
-θ2L = [0.,0.,0.,0.]
-θ2R = [0.,0.,0.,0.]
-dot(normalize(foursite(θ1L,θ1R,θ2L,θ2R)),H*normalize(foursite(θ1L,θ1R,θ2L,θ2R)))
-spec = real(eigvals(H))
-unique(trunc.(spec, digits = 4))
-XL = []
-XR = []
-Y = []
-Yerr = []
-norm([1/sqrt(2),1/sqrt(2)])
-for i in 1:1000
-    θ1L = 0.5*(rand(4)-ones(Float64,4))
-    θ1R = 0.5*(rand(4)-ones(Float64,4))
-    θ2L = [0.,0.,0.,0.]
-    θ2R = [0.,0.,0.,0.]
-    append!(XL,norm(θ1L)^2)
-    append!(XR,norm(θ1R)^2)
-    tempval = dot(normalize(foursite(θ1L,θ1R,θ2L,θ2R)),H*normalize(foursite(θ1L,θ1R,θ2L,θ2R)))+1.66666666666
-    E = real(tempval)
-    err = imag(tempval)
-    append!(Y,E)
-    append!(Yerr,err)
-end
-
-plot(XL,Y,legend = false, seriestype = :scatter, xlabel = "ϕ_{2} in Radians", ylabel = "Energy")
-plot!(X,Yerr)
-savearray = [XL,XR,Y]
-filename = string("DispersionCurve.txt")
-touch(filename)
-open(filename,"w") do io
-    writedlm(filename, savearray)
-end
-
-savefig("velocityfig.pdf")
+#plot(XAX,YAX,title = string("SvN of xVBS Chain of Length ",L, ", N =",n), label =  nothing, xlabel = "Bipartition Placement", ylabel = "Entanglement Entropy")
+#savefig("5siteED")
