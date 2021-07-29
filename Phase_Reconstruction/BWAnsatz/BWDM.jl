@@ -134,7 +134,7 @@ end
 
 
 L = 7
-θ = 0.58
+θ = 0.67
 CM = zeros(Complex{Float64},36,36)
 @time for j in 1:length(Generators)
     CM = CM + MakeOp(MakeOpList((cos(θ)+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),1,2,2))
@@ -160,10 +160,22 @@ Harray = []
 end
 BC = BoundaryOp(1,L,1)
 @time H = sum(Harray, dims = 1)[1]-100*BC
-@time states = eigs(H,which = :SR)
-states[1]
-unique(trunc.(real(eigvals(Array(H))), digits = 4))
-states = eigvecs(H)
+@time states = eigs(H ,which = :SR, nev =10 , ,maxiter = 1000)
+ev = 2π*(real(states[1])-real(states[1])[1]*ones(6))
+diagm(ev)
+notrho = exp(-diagm(ev))/tr(exp(-diagm(ev)))
+
+
+
+
+
+
+
+
+
+
+
+
 #which excited state-- 1-3^L are permitted
 n=1
 dot(states[:,n],H*states[:,n])
