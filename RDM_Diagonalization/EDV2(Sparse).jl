@@ -93,6 +93,57 @@ function MakeOp(C::Vector{Array{Complex{Float64},2}})
     end
     return HTerm
 end
+function SvN(dmat::Array{Complex{Float64},2},cutoff::Float64)
+    schmidtnumbers = filter(!iszero,eigvals(dmat))
+    print(schmidtnumbers)
+    vne = 0
+    for i in 1:length(schmidtnumbers)
+        if real(schmidtnumbers[i]) > cutoff
+            vne = vne - real(schmidtnumbers[i])*log(real(schmidtnumbers[i]))
+        end
+    end
+    return vne
+end
+function traceop(k::Int64,n::Int64,L::Int64#=k is which state, n is the site L self explanatory=#)
+    Id = sparse([1. 0 0 0 0 0 ; 0 1 0 0 0 0 ; 0 0 1 0 0 0 ; 0 0 0 1 0 0 ; 0 0 0 0 1 0 ; 0 0 0 0 0 1])
+    vec = sparse(zeros(Complex{Float64},6))
+    vec[k] = 1.
+    if n == 1
+        trop = vec
+    else
+        trop = Id
+    end
+    for i in 2:L
+        if i != n
+            trop = kron(trop,Id)
+        else
+            trop = kron(trop,transpose(vec))
+        end
+    end
+    return sparse(trop)
+end
+
+function tracefunc(rho#=::Array{Complex{Float64},2}=#,n::Int64,L::Int64)
+    tracerho = traceop(1,n,L)*rho*transpose(traceop(1,n,L))+traceop(2,n,L)*rho*transpose(traceop(2,n,L))+traceop(3,n,L)*rho*transpose(traceop(3,n,L))+traceop(4,n,L)*rho*transpose(traceop(4,n,L))+traceop(5,n,L)*rho* transpose(traceop(5,n,L))+traceop(6,n,L)*rho*transpose(traceop(6,n,L))
+    return tracerho
+end
+
+
+function partialtrace(rho#=::Array{Complex{Float64},2}=#,n::Int64,L::Int64#= n = how many sites you want to trace out from right to left, L is size as always=#)
+    result = rho
+    for i in 0:n-1
+        result = tracefunc(result,L-i,L-i)
+    end
+    return result
+end
+
+function makerho(statein::Vector{Complex{Float64}})
+    rhostate = statein
+    rho = Array{Complex{Float64},2}
+    rho = kron(sparse(rhostate),sparse(conj(transpose(rhostate))))
+    rho = (1/tr(rho))*rho
+    return rho
+end
 function BoundaryOp(N::Int64,L::Int64,P::Int64)
     Basis = [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
     function delta(a::Int64,b::Int64)
@@ -133,8 +184,8 @@ end
 
 
 
-L = 7
-θ = 0.73
+L = 5
+θ = 0.47
 CM = zeros(Complex{Float64},36,36)
 @time for j in 1:length(Generators)
     CM = CM + MakeOp(MakeOpList((cos(θ)+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),1,2,2))
@@ -155,33 +206,23 @@ Harray = []
             push!(K,Ids)
         end
     end
-    Hterm = i*kron(K...)
+    Hterm = kron(K...)
     push!(Harray,Hterm)
 end
 BC = BoundaryOp(1,L,1)
-@time H = sum(Harray, dims = 1)[1]-100*BC
-@time states = eigs(H ,which = :SR, nev =10 , maxiter = 1000)
-ev = 2π*(real(states[1])-real(states[1])[1]*ones(10))
-diagm(ev)
-notrho = exp(-diagm(ev))/tr(exp(-diagm(ev)))
+@time H = sum(Harray, dims = 1)[1]-1000*BC
+@time states = eigs(H ,which = :SR, nev =6 #=, maxiter = 1000=#)
+state=states[2][:,1]
+normalize!(state)
+@time dmat = kron(sparse(state),sparse(adjoint(state)))
+@time rho = partialtrace(dmat,3,L)
+
+eigen(Array(rho))
 
 
 
 
-rhoplus = open("Phase_Reconstruction/XVBSESPEC/DMRG_EE_ThetaIt=16_Sites=15.txt") do file
-    return readdlm(file, skipstart = 3)
-end
 
-
-rho = Vector{Float64}(rhoplus[8,:])/sum(Vector{Float64}(rhoplus[8,:]))
-
-
-
-#which excited state-- 1-3^L are permitted
-n=1
-dot(states[:,n],H*states[:,n])
-dmat = makerho(states,n)
-rho = partialtrace(dmat,1,L)
 YAX = zeros(L-1)
 
 for i in 1:L-1

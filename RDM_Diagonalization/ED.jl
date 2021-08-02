@@ -85,13 +85,13 @@ function MakeOpList(A::Array{Complex{Float64},2},B::Array{Complex{Float64},2},x:
 end
 
 
-function makerho(statein::Array{Complex{Float64},2},n::Int64)
+#=function makerho(statein::Array{Complex{Float64},2},n::Int64)
     rhostate = statein[n,:]
     rho = Array{Complex{Float64},2}
     rho = kron(rhostate,transpose(rhostate))
     rho = (1/tr(rho))*rho
     return rho
-end
+end=#
 
 
 
