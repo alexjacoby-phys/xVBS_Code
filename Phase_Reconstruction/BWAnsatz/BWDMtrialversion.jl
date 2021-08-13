@@ -134,7 +134,7 @@ end
 
 
 L = 7
-θ = 0.73
+θ = 0.58
 CM = zeros(Complex{Float64},36,36)
 @time for j in 1:length(Generators)
     CM = CM + MakeOp(MakeOpList((cos(θ)+0*im)*Generators[j],(1. +0*im)*transpose(Generators[j]),1,2,2))
@@ -161,9 +161,9 @@ end
 BC = BoundaryOp(1,L,1)
 @time H = sum(Harray, dims = 1)[1]-100*BC
 @time states = eigs(H ,which = :SR, nev =10 , maxiter = 1000)
-ev = 2π*(real(states[1])-real(states[1])[1]*ones(10))
-diagm(ev)
-notrho = exp(-diagm(ev))/tr(exp(-diagm(ev)))
+ev = real(states[1])-real(states[1])[1]*ones(10)
+diagm(-2π*ev)
+notrho = exp.(-ev)/sum(exp.(-ev))
 
 
 
@@ -174,27 +174,3 @@ end
 
 
 rho = Vector{Float64}(rhoplus[8,:])/sum(Vector{Float64}(rhoplus[8,:]))
-
-
-
-#which excited state-- 1-3^L are permitted
-n=1
-dot(states[:,n],H*states[:,n])
-dmat = makerho(states,n)
-rho = partialtrace(dmat,1,L)
-YAX = zeros(L-1)
-
-for i in 1:L-1
-    YAX[i] = SvN(partialtrace(dmat,i,L),0.01)
-end
-XAX = 2:L
-savearray = [XAX,YAX]
-filename  = string("ED_EE_",L,"Site")
-touch(filename)
-open(filename,"w") do io
-    writedlm(filename, savearray)
-end
-
-
-#plot(XAX,YAX,title = string("SvN of xVBS Chain of Length ",L, ", N =",n), label =  nothing, xlabel = "Bipartition Placement", ylabel = "Entanglement Entropy")
-#savefig("5siteED")
