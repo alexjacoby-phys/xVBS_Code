@@ -40,4 +40,4 @@ for i in 2:4
     plot!(X[i],Y[i],  linewidth = 6,color = GRAD[i],label = Labels[i]#=,seriestype = :scatter=#,legend = :right, markersize = 6, markeralpha = 0.8)
 end
 plot!()
-savefig("BWANSATZ.pdf")
+savefig("FluctuationFig.pdf")

@@ -4,19 +4,19 @@ using LaTeXStrings
 using Formatting
 
 
-A =open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG/BW-theta=0.51-beta=0.53.txt") do file
+A =open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG-NEW/BW-theta=0.51-beta=0.53.txt") do file
      readdlm(file)
 end
 
-B =open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG/BW-theta=0.59-beta=1.44.txt") do file
+B =open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG-NEW/BW-theta=0.59-beta=1.44.txt") do file
      readdlm(file)
 end
 
-C =open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG/BW-theta=0.63-beta=0.84.txt") do file
+C =open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG-NEW/BW-theta=0.63-beta=0.84.txt") do file
      readdlm(file)
 end
 
-D = open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG/BW-theta=0.73-beta=0.71.txt") do file
+D = open("/Users/alexjacoby/Documents/xVBS_Code/Phase_Reconstruction/BW-FIG-NEW/BW-theta=0.73-beta=0.71.txt") do file
      readdlm(file)
 end
 
@@ -41,3 +41,5 @@ for i in 2:4
 end
 plot!()
 savefig("BWANSATZ.pdf")
+
+#clearly this figure produces miserable results-- I think i ran something wrong but I am not entirely clear on why this is the case#
