@@ -33,11 +33,11 @@ X = Vector{Int64}(Theta1[1,:])
 Y = [Theta1[2,:],Theta2[2,:],Theta3[2,:],Theta4[2,:]]
 Labels = [L"\theta = 0",L"\theta  \approx 0.47",L"\theta  \approx 0.55",L"\theta  \approx 0.63"]
 
-plot(X,Y[1], xlabel = "Site After Bipartition",ylabel = L"\mathbf{S}_{vN}" ,#=seriestype = :scatter,=#color = GRAD[1] ,ytickfontsize = 10,xtickfontsize = 10,xguidefontsize = 15,yguidefontsize =15, fontfamily = "Times", label = Labels[1], legend = :right, markersize = 6, markeralpha = 0.8,linewidth = 6)
+plot(X,Y[1], xlabel = "Site After Bipartition",ylabel = L"\mathbf{S}_{vN}" ,#=seriestype = :scatter,=#color = GRAD[1] ,ytickfontsize = 10,xtickfontsize = 10,xguidefontsize = 15,yguidefontsize =15, fontfamily = "Times", label = Labels[1], legend = :bottom, markersize = 6, markeralpha = 0.8,linewidth = 6, legendfontsize = 12)
 
 
 for i in 2:4
-    plot!(X,Y[i],  linewidth = 6,color = GRAD[i],label = Labels[i]#=,seriestype = :scatter=#,legend = :right, markersize = 6, markeralpha = 0.8)
+    plot!(X,Y[i],  linewidth = 6,color = GRAD[i],label = Labels[i]#=,seriestype = :scatter=#, markersize = 6, markeralpha = 0.8)
 end
 plot!()
-savefig("PhaseTransition.pdf")
+#savefig("PhaseTransition.pdf")

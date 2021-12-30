@@ -2,7 +2,8 @@ using Plots
 using DelimitedFiles
 using LinearAlgebra
 using LaTeXStrings
-
+using Measures
+gr()
 dat1 = open("/Users/alexjacoby/Documents/xVBS_Code/xVBSFigs/CORMAT/Cormat-dat2/corrmat-theta=0.5.txt") do file
     readdlm(file)
 end
@@ -71,11 +72,11 @@ for i in 1:11
     vec0 = vecvec[i]
     push!(thetarecon,atan(4*(vec0[2]/vec0[1])))
 end
-
+#PyPlot.matplotlib[:rc]("text", usetex=true) # allow tex rendering
+#PyPlot.rc("font", family="Computer Modern", weight="normal", size="18")
 theta = [0.5,0.52,0.54,0.56,0.58,0.6,0.62,0.64,0.66,0.68,0.7]
+plot(theta,theta, color = :grey, linewidth = 3,xlabel = L"\mathbf{\theta}",ylabel = L"{\rm Reconstructed} \  \theta",label = L"{\rm Exact} \ \theta" ,ytickfontsize = 10,xtickfontsize = 10,xguidefontsize = 15,yguidefontsize =15, fontfamily = "Times",legend = :bottomright, legendfontsize = 14)
 
-plot(theta,theta, color = :red, linewidth = 4,xlabel = L"\theta",ylabel = L"{\rm Reconstructed} \ \theta",label = "Exact",xguidefontsize = 12,yguidefontsize =12, fontfamily = "Times",legend = :bottomright, legendfontsize = 15, margin = 10)
+plot!(theta,thetarecon,label = L" {\rm Reconstructed} \ \theta",marker = :hex,markercolor = :black,markersize =8,markerwidth=10, seriestype = :scatter)
 
-plot!(theta,thetarecon,label = "Reconstructed",marker = :cross,markercolor = :black,markersize =12,markerwidth=10, seriestype = :scatter)
-
-savefig("Thetarecon.pdf")
+savefig("Thetarecon_revised.pdf")

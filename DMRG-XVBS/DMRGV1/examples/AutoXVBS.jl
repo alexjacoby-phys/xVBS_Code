@@ -15,8 +15,7 @@ using .DMRjulia
 using Plots
 
 
-
-
+expect
 
 Ns = 4
 MXM = 6^Ns
